@@ -61,6 +61,14 @@ app.put('/event/like', (req, res) => {
         });
 });
 
+// put because this is an update. Passes through to shared method.
+app.put('/event/add_comment', (req, res) => {
+    db.addComment(req.body.id)
+        .then((data) => {
+            res.json(data);
+        });
+});
+
 // Passes through to shared method.
 // Delete distinguishes this route from put above
 app.delete('/event/like', (req, res) => {

@@ -32,12 +32,20 @@ const mockEvents = {
     ]
 };
 
-const dbEvents = { events: [] };
+const mockComments = { 
+    comments: [
+        { id: 1, comment: 'They kicked me out for bringing my pet Bear.', datetime_added: '2022-02-01:12:00'},
+        { id: 2, comment: 'They tricked me with free food and then made me work :(', datetime_added: '2022-02-01:12:00'}    
+    ] 
+};
+
+const dbEvents = { events: [], comments: [] };
 
 async function getEvents(db = mariadb) {
     const conn = await getConnection(db);
     if (conn) {
-        const sql = 'SELECT id, title, description, location, likes, datetime_added FROM events;';
+        // const sql = 'SELECT id, title, description, location, likes, datetime_added FROM events ev INNER JOIN comments comm ON ev.id = comm.fk_event_id;';
+        const sql = 'SELECT id, title, description, location, likes, datetime_added FROM events
         return conn.query(sql)
             .then(rows => {
                 console.log(rows);
@@ -72,6 +80,41 @@ async function getEvents(db = mariadb) {
 };
 
 
+async function getComments(db = mariadb) {
+    const conn = await getConnection(db);
+    if (conn) {
+        const sql = 'SELECT id, comment, datetime_added FROM comments comm INNER JOIN events ev ON comm.fk_event_id = ev.id;';
+        // const sql = 'SELECT id, title, description, location, likes, datetime_added FROM events
+        return conn.query(sql)
+            .then(rows => {
+                console.log(rows);
+                dbEvents.events = [];
+                rows.forEach((row) => {
+                    const comment = {
+                        comment: row.comment,
+                        id: row.id,
+                        datetime_added: row.datetime_added
+                    };
+                    dbEvents.events.push(ev);
+                });
+                conn.end();
+                return dbEvents;
+            })
+            .catch(err => {
+                //handle query error
+                console.log(err);
+                if (conn && conn.destroy) {
+                    conn.destroy();
+                }
+                return mockEvents;
+            });
+    }
+    else {
+        return mockEvents;
+    }
+
+};
+
 
 async function addEvent(req, db = mariadb) {
     // create a new object from the json data and add an id
@@ -103,6 +146,46 @@ async function addEvent(req, db = mariadb) {
     }
     else {
         mockEvents.events.push(ev);
+        return {};
+    }
+};
+
+async function addComment(req, db = mariadb) {
+    // create a new object from the json data and add an id
+    // const ev = {
+    //     title: req.body.title,
+    //     description: req.body.description,
+    //     location: req.body.location,
+    //     id: mockEvents.events.length + 1,
+    //     likes: 0,
+    //     datetime_added: new Date().toUTCString()
+    // }
+    const comment = {
+        id: mockComments.comments.length + 1,
+        comment: NULL,
+        fk_event_id: 0,
+        datetime_added: new Date().toUTCString()                
+    }     
+    const sql = 'INSERT INTO comments (comment, fk_event_id) VALUES (?,?);';
+    const values = [comment.comment, comment.fk_event_id];
+    const conn = await getConnection(db);
+    if (conn) {
+        conn.query(sql, values)
+            .then(() => {
+                conn.end();
+                return {};
+            })
+            .catch(err => {
+                console.log(err);
+                mockComments.comments.push(comment);
+                if (conn && conn.destroy) {
+                    conn.destroy();
+                }
+                return {};
+            });
+    }
+    else {
+        mockComments.events.push(comment);
         return {};
     }
 };
