@@ -63,7 +63,7 @@ app.put('/event/like', (req, res) => {
 
 // put because this is an update. Passes through to shared method.
 app.put('/event/add_comment', (req, res) => {
-    db.addComment(req.body.id)
+    db.addComment(req)
         .then((data) => {
             res.json(data);
         });
