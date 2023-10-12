@@ -27,31 +27,39 @@ async function getConnection(db) {
 // mock events data - Once deployed the data will come from database
 const mockEvents = {
     events: [
-        { id: 1, title: 'a mock event', description: 'something really cool', location: 'Chez Joe Pizza', likes: 0, datetime_added: '2022-02-01:12:00' },
-        { id: 2, title: 'another mock event', description: 'something even cooler', location: 'Chez John Pizza', likes: 0, datetime_added: '2022-02-01:12:00' },
+        { id: 1, title: 'a mock event', description: 'something really cool', location: 'Chez Joe Pizza', likes: 0, datetime_added: '2022-02-01:12:00', comments: [] },
+        { id: 2, title: 'another mock event', description: 'something even cooler', location: 'Chez John Pizza', likes: 0, datetime_added: '2022-02-01:12:00', comments: [] },
     ]
 };
 
-const dbEvents = { events: [] };
+const dbEvents = { events: [], comments: [] };
 
 async function getEvents(db = mariadb) {
     const conn = await getConnection(db);
     if (conn) {
-        const sql = 'SELECT id, title, description, location, likes, datetime_added FROM events;';
+        const sql = 'SELECT ev.id ev_id, ev.title ev_title, ev.description ev_description, ev.location ev_location, ev.likes ev_likes, ev.datetime_added ev_datetime_added, comm.comment comm_comment FROM comments comm INNER JOIN events ev ON comm.fk_event_id = ev.id;';
         return conn.query(sql)
             .then(rows => {
                 console.log(rows);
                 dbEvents.events = [];
+                eventsMap = {};
                 rows.forEach((row) => {
-                    const ev = {
-                        title: row.title,
-                        description: row.description,
-                        location: row.location,
-                        id: row.id,
-                        likes: row.likes,
-                        datetime_added: row.datetime_added
-                    };
-                    dbEvents.events.push(ev);
+                    if (row.ev_id in eventsMap) {
+                        const ev = {
+                            title: row.ev_title,
+                            description: row.ev_description,
+                            location: row.ev_location,
+                            id: row.ev_id,
+                            likes: row.ev_likes,
+                            datetime_added: row.ev_datetime_added,
+                            comments: [row.comm_comment]
+                        };
+                        dbEvents.events.push(ev);
+                        eventsMap[row.ev_id] = ev
+                    }
+                    else {
+                        eventsMap[row.ev_id].comments.push(row.comm_comment);
+                    }
                 });
                 conn.end();
                 return dbEvents;
@@ -70,8 +78,6 @@ async function getEvents(db = mariadb) {
     }
 
 };
-
-
 
 async function addEvent(req, db = mariadb) {
     // create a new object from the json data and add an id
@@ -106,6 +112,37 @@ async function addEvent(req, db = mariadb) {
         return {};
     }
 };
+
+async function addComment(req, db = mariadb) {
+    // create a new object from the json data and add an id
+    const comment = {
+        comment: req.body.comment,
+        fk_event_id: req.body.eventId,
+        datetime_added: new Date().toUTCString()                
+    }     
+    const sql = 'INSERT INTO comments (comment, fk_event_id) VALUES (?,?);';
+    const values = [comment.comment, comment.fk_event_id];
+    const conn = await getConnection(db);
+    if (conn) {
+        conn.query(sql, values)
+            .then(() => {
+                conn.end();
+                return {};
+            })
+            .catch(err => {
+                console.log(err);
+                mockEvents.events.filter(ev => ev.id === req.body.eventId)[0].comments.push(req.body.comment);
+                if (conn && conn.destroy) {
+                    conn.destroy();
+                }
+                return {};
+            });
+    }
+    else {
+        mockEvents.events.filter(ev => ev.id === req.body.eventId)[0].comments.push(req.body.comment);
+        return {};
+    }
+}
 
 function cleanUpLike(err, conn, id, increment) {
     console.log(err);
@@ -178,6 +215,7 @@ const eventRepository = function () {
     return {
         getEvents: getEvents,
         addEvent: addEvent,
+        addComment: addComment,
         addLike: addLike,
         removeLike: removeLike
     };
