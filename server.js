@@ -68,9 +68,9 @@ app.delete('/event/like', (req, res) => {
         .then((data) => res.json(data));
 });
 
-app.get('/event/getComments' (req, res) =>(
-    console.error("getComments endpoint hit")    
-))
+app.get('/event/getComments', (req, res) =>{    
+    console.log(`getComments endpoint hit`);   
+});
 
 app.get('/event/addComments', (req,res) => (
     console.error(`addComments endpoint hit`)    
