@@ -114,10 +114,11 @@ async function addEvent(req, db = mariadb) {
 };
 
 async function addComment(req, db = mariadb) {
+    const eventIdNum = Number(req.body.eventId);
     // create a new object from the json data and add an id
     const comment = {
         comment: req.body.comment,
-        fk_event_id: req.body.eventId,
+        fk_event_id: eventIdNum,
         datetime_added: new Date().toUTCString()                
     }     
     const sql = 'INSERT INTO comments (comment, fk_event_id) VALUES (?,?);';
@@ -131,7 +132,7 @@ async function addComment(req, db = mariadb) {
             })
             .catch(err => {
                 console.log(err);
-                mockEvents.events.filter(ev => ev.id === req.body.eventId)[0].comments.push(req.body.comment);
+                mockEvents.events.filter(ev => ev.id === eventIdNum)[0].comments.push(req.body.comment);
                 if (conn && conn.destroy) {
                     conn.destroy();
                 }
@@ -139,7 +140,7 @@ async function addComment(req, db = mariadb) {
             });
     }
     else {
-        mockEvents.events.filter(ev => ev.id === req.body.eventId)[0].comments.push(req.body.comment);
+        mockEvents.events.filter(ev => ev.id === eventIdNum)[0].comments.push(req.body.comment);
         return {};
     }
 }
