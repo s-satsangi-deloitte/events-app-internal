@@ -16,7 +16,8 @@ CREATE TABLE events(
 CREATE TABLE comments(
     id INT NOT NULL AUTO_INCREMENT,
     comment VARCHAR(255),
-    fk_event_id INT FOREIGN KEY REFERENCES events( id ),
+    fk_event_id INT,
+    FOREIGN KEY (fk_event_id) REFERENCES events(id),
     datetime_added TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY ( id )
 );
