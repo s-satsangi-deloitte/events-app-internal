@@ -87,7 +87,8 @@ async function addEvent(req, db = mariadb) {
         location: req.body.location,
         id: mockEvents.events.length + 1,
         likes: 0,
-        datetime_added: new Date().toUTCString()
+        datetime_added: new Date().toUTCString(),
+        comments: []        
     }
     const sql = 'INSERT INTO events (title, description, location) VALUES (?,?,?);';
     const values = [ev.title, ev.description, ev.location];
